@@ -1,0 +1,28 @@
+syntax = "proto3";  // 指定proto3语法格式
+package rpc;
+
+//指定go文件的包名
+option go_package = "./proto";
+
+message FileInfoRequest {
+  string file_uuid = 1; // 聊天消息， 一个完整的 chatModel 的序列化数据
+}
+
+message FileInfoResponse {
+  string file_name = 1;
+  string file_hash = 2;
+  int64 file_size = 3;
+  string file_type = 4; // 文件后缀
+  string file_path = 5;
+
+}
+
+service FileService {
+  rpc FileInfo (FileInfoRequest) returns (FileInfoResponse);
+
+}
+
+// goctl rpc protoc file_rpc.proto --go_out=. --go-grpc_out=. --zrpc_out=.
+
+
+

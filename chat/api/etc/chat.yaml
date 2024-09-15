@@ -1,0 +1,35 @@
+Host: 0.0.0.0
+Port: 9003
+Name: "chat.api"
+
+
+Etcd:
+  Hosts:
+    - "localhost:2379"
+
+# 用户微服务
+UserRpc:
+  Etcd:
+    Hosts:
+      - "localhost:2379"
+    Key: user.rpc
+# 文件微服务
+FileRpc:
+  Etcd:
+    Hosts:
+      - "localhost:2379"
+    Key: file.rpc
+
+Mysql:
+  DataSource: "root:root@tcp(localhost:3306)/sim_db?charset=utf8&parseTime=True&loc=Local"
+
+Log:
+  ServiceName: auth
+  Encoding: plain
+  Stat: false
+  TimeFormat: 2006-01-02 15:04:05
+
+Redis:
+  Addr: "127.0.0.1:6379"
+  Pwd: "5566"
+  DB: 0

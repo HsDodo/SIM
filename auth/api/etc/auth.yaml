@@ -1,0 +1,47 @@
+Host: "0.0.0.0"
+Port: 9700
+Name: "auth"
+
+Etcd:
+  Hosts:
+    - "localhost:2379"
+
+# 用户微服务
+UserRpc:
+  Etcd:
+    Hosts:
+      - "localhost:2379"
+    Key: user.rpc
+
+
+Mysql:
+  DataSource: "root:root@tcp(localhost:3306)/sim_db?charset=utf8&parseTime=True&loc=Local"
+Auth:
+  AccessSecret: "Hsen1015"
+  AccessExpire: 24 # 小时
+SystemEnv:
+  LogLevel: "debug"
+Log:
+  ServiceName: auth
+  Encoding: plain
+  Stat: false
+  TimeFormat: 2006-01-02 15:04:05
+Redis:
+  Addr: "127.0.0.1:6379"
+  Pwd: "5566"
+  DB: 0
+
+OpenLoginList:
+  Wechat:
+    Appid: "wx93daaac2d32872ce"
+    AppSecret: "b3cd8687029de78b9952c44f9ddb029c"  # 微信开放平台的appSecret
+    Icon: "https://open.weixin.qq.com/connect/qrconnect?appid=wx39c379788eb1286a&scope=snsapi_login&redirect_uri=http%3A%2F%2Fmp.weixin.qq.com%2Fdebug%2Fcgi-bin%2Fsandbox%3Ft%3Dsandbox%2Flogin"
+    RedirectURI: "http://ntf2f2.natappfree.cc/v1/api/auth/open_login"  # 微信回调地址,本地服务器的地址,（这里用来内网穿透，这个域名会变的）
+    Endpoint:
+      TokenURL: "https://api.weixin.qq.com/sns/oauth2/access_token" # 微开放平台的tokenURL,获取access_token ,首先需要得到 code
+      AuthURL: "https://open.weixin.qq.com/connect/oauth2/authorize" # 微信开放平台的authURL,获取code
+      UserInfoURL: "https://api.weixin.qq.com/sns/userinfo" # 微信开放平台的userInfoURL,获取用户信息
+    Scopes:
+      - "snsapi_login"
+      - "snsapi_userinfo"
+      - "snsapi_base"

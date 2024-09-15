@@ -1,0 +1,46 @@
+Host: 0.0.0.0
+Port: 9005
+Name: "logs.api"
+
+
+Etcd:
+  Hosts:
+    - "localhost:2379"
+
+# 用户微服务
+UserRpc:
+  Etcd:
+    Hosts:
+      - "localhost:2379"
+    Key: user.rpc
+
+
+# 消息队列
+KqPusherConf:
+  Brokers:
+    - 127.0.0.1:9092
+  Topic: logs-topic
+
+KqConsumerConf:
+  Name: kqConsumer
+  Brokers:
+    - 127.0.1:9092
+  Group: kqConsumer
+  Topic: logs-topic
+  Offset: first
+  Consumers: 8
+  Processors: 8
+
+Mysql:
+  DataSource: "root:root@tcp(localhost:3306)/sim_db?charset=utf8&parseTime=True&loc=Local"
+
+Log:
+  ServiceName: auth
+  Encoding: plain
+  Stat: false
+  TimeFormat: 2006-01-02 15:04:05
+
+Redis:
+  Addr: "127.0.0.1:6379"
+  Pwd: "5566"
+  DB: 0

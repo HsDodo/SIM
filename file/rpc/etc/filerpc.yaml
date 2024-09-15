@@ -1,0 +1,27 @@
+Name: file.rpc
+ListenOn: 0.0.0.0:9102
+Etcd:
+  Hosts:
+    - 127.0.0.1:2379
+  Key: file.rpc
+# MySQL
+Mysql:
+  DataSource: "root:root@tcp(localhost:3306)/sim_db?charset=utf8&parseTime=True&loc=Local"
+
+
+
+# 日志
+Log:
+  ServiceName: auth
+  Encoding: plain
+  Stat: false
+  TimeFormat: 2006-01-02 15:04:05
+  Colors:
+    debug: "\x1b[36m"
+    info: "\x1b[32m"
+    warn: "\x1b[33m"
+    error: "\x1b[31m"
+RedisConf:
+  Addr: "127.0.0.1:6379"
+  Pwd: "5566"
+  DB: 0

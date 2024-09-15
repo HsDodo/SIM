@@ -1,0 +1,265 @@
+#version: '3.9'
+services:
+#mysql
+  mysql:
+    image: mysql:latest
+    restart: always
+    volumes:
+      - ./mysql/conf:/etc/mysql/conf.d
+      - ./mysql/datadir:/var/lib/mysql
+      - ./mysql/db.sql:/docker-entrypoint-initdb.d/db.sql
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: sim_db
+    networks:
+      sim_network:
+        ipv4_address: 10.0.0.20
+    ports:
+        - "3306:3306"
+#redis
+  redis:
+    restart: always
+    image: "redis:latest"
+    volumes:
+        - ./redis/redis.conf:/etc/redis/redis.conf 
+        - ./redis/data:/data 
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "/etc/redis/redis.conf"]  # 指定自定义配置文件
+    networks:
+      sim_network:
+        ipv4_address: 10.0.0.21
+
+# etcd
+  etcd:
+    image: bitnami/etcd:3.5.12
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=yes
+      - ETCD_ADVERTISE_CLIENT_URLS=http://10.0.0.22:2379
+      - ETCD_LISTEN_CLIENT_URLS=http://10.0.0.22:2379
+    networks:
+      sim_network:
+        ipv4_address: 10.0.0.22
+    command: [ "etcd" ]
+
+# nacos
+  nacos:
+    image: nacos/nacos-server:latest
+    restart: always
+    environment:
+      - MODE=standalone
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+      - "9849:9849"
+    networks:
+      sim_network:
+        ipv4_address: 10.0.0.23
+
+# kafka
+  zookeeper-server:
+    image: bitnami/zookeeper:latest
+    restart: always
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    networks:
+      sim_network:
+        ipv4_address: 10.0.0.24
+    deploy:
+      resources:
+        limits:
+          memory: 200M
+        reservations:
+          memory: 100M
+
+  kafka-server:
+    image: bitnami/kafka:latest
+    restart: always
+    ports:
+      - "9092:9092"
+    environment:
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper-server:2181
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://10.0.0.3:9092
+      - KAFKA_HEAP_OPTS=-Xmx256M -Xms128M
+    depends_on:
+      - zookeeper-server
+    networks:
+      sim_network:
+        ipv4_address: 10.0.0.25
+    deploy:
+      resources:
+        limits:
+          cpus: 0.1
+          memory: 500M
+        reservations:
+          memory: 130M
+
+  kafka-map:
+    image: dushixiang/kafka-map:latest
+    restart: always
+    ports:
+      - "9001:8080"
+    environment:
+      - DEFAULT_USERNAME=admin
+      - DEFAULT_PASSWORD=admin
+    networks:
+      sim_network:
+        ipv4_address: 10.0.0.26
+    deploy:
+      resources:
+        limits:
+          memory: 50M
+        reservations:
+          memory: 20M
+
+
+# 网关
+  gateway:
+      build:
+        context: gateway
+      restart: always
+      networks:
+        sim_network:
+            ipv4_address: 10.0.0.2
+      ports:
+        - "8888:8888"
+      depends_on:
+        - etcd
+        - nacos
+  auth_api:
+    build:
+      context: auth/api
+    restart: always
+    networks:
+      sim_network:
+        ipv4_address: 10.0.0.3
+    depends_on:
+      - mysql
+      - redis
+      - user_rpc
+      - kafka-server
+      - etcd
+      - nacos
+  chat_api:
+    build:
+      context: chat/api
+    restart: always
+    networks:
+      sim_network:
+        ipv4_address: 10.0.0.4
+    depends_on:
+      - mysql
+      - redis
+      - user_rpc
+      - file_rpc
+      - etcd
+      - nacos
+
+  file_api:
+    build:
+      context: file/api
+    restart: always
+    networks:
+      sim_network:
+        ipv4_address: 10.0.0.5
+    depends_on:
+      - mysql
+      - redis
+      - user_rpc
+      - file_rpc
+      - etcd
+      - nacos
+
+  group_api:
+    build:
+      context: group/api
+    restart: always
+    networks:
+      sim_network:
+        ipv4_address: 10.0.0.6
+    depends_on:
+      - mysql
+      - redis
+      - user_rpc
+      - file_rpc
+      - chat_rpc
+      - etcd
+      - nacos
+
+  user_api:
+    build:
+      context: user/api
+    restart: always
+    networks:
+      sim_network:
+        ipv4_address: 10.0.0.7
+    depends_on:
+      - mysql
+      - redis
+      - user_rpc
+      - chat_rpc
+      - etcd
+      - nacos
+  logs_api:
+    build:
+      context: logs/api
+    restart: always
+    networks:
+      sim_network:
+        ipv4_address: 10.0.0.8
+    depends_on:
+      - mysql
+      - redis
+      - user_rpc
+      - chat_rpc
+      - etcd
+      - nacos
+
+  chat_rpc:
+    build:
+      context: chat/rpc
+    restart: always
+    networks:
+      sim_network:
+        ipv4_address: 10.0.0.11
+    depends_on:
+      - mysql
+      - nacos
+      - redis
+      - etcd
+
+  user_rpc:
+    build:
+      context: user/rpc
+    restart: always
+    networks:
+      sim_network:
+        ipv4_address: 10.0.0.12
+    depends_on:
+      - mysql
+      - nacos
+      - redis
+      - etcd
+
+  file_rpc:
+    build:
+      context: file/rpc
+    restart: always
+    networks:
+      sim_network:
+        ipv4_address: 10.0.0.13
+    depends_on:
+      - mysql
+      - nacos
+      - redis
+      - etcd
+
+networks:
+  sim_network:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.0.0.0/24
